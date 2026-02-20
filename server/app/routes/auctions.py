@@ -16,6 +16,7 @@ from app.schemas import (
     PlaceBidRequest,
 )
 from app.services.locks import auction_locks
+from app.ws.manager import manager
 
 ANTI_SNIPE_WINDOW_SECONDS = 30
 ANTI_SNIPE_EXTENSION_SECONDS = 30
@@ -153,6 +154,47 @@ async def place_bid(
     # Build response (outside lock — no DB writes here)
     auction_resp = AuctionResponse.model_validate(auction, from_attributes=True)
     bid_resp = BidResponse.model_validate(bid, from_attributes=True)
+
+    # --- WebSocket broadcasts (outside lock to avoid slow sends under lock) ---
+    await manager.broadcast(
+        auction_id,
+        {
+            "type": "new_bid",
+            "bid": {
+                "id": bid.id,
+                "bidder_id": bid.bidder_id,
+                "bidder_name": bid.bidder_name,
+                "amount": bid.amount,
+                "created_at": bid.created_at.isoformat(),
+            },
+            "auction": {
+                "current_price": auction.current_price,
+                "current_bidder_id": auction.current_bidder_id,
+                "current_bidder_name": auction.current_bidder_name,
+                "end_time": auction.end_time.isoformat(),
+            },
+        },
+    )
+
+    if previous_bidder_id and previous_bidder_id != body.bidder_id:
+        await manager.send_to_user(
+            auction_id,
+            previous_bidder_id,
+            {
+                "type": "outbid",
+                "by": body.bidder_name,
+                "new_price": bid.amount,
+            },
+        )
+
+    if time_extended:
+        await manager.broadcast(
+            auction_id,
+            {
+                "type": "time_extended",
+                "new_end_time": auction.end_time.isoformat(),
+            },
+        )
 
     message = "Bid placed successfully"
     if time_extended:

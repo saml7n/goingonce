@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import create_db_and_tables
 from app.routes.auctions import router as auctions_router
+from app.ws.handler import router as ws_router
 
 
 @asynccontextmanager
@@ -32,6 +33,7 @@ app.add_middleware(
 )
 
 app.include_router(auctions_router)
+app.include_router(ws_router)
 
 
 @app.get("/health")
