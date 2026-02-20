@@ -1,30 +1,23 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from '@/components/ui/sonner'
-import { Gavel } from 'lucide-react'
-
-function HomePage() {
-  return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto flex items-center gap-2 px-4 py-4">
-          <Gavel className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold tracking-tight">GoingOnce</h1>
-        </div>
-      </header>
-      <main className="container mx-auto px-4 py-8">
-        <p className="text-muted-foreground">Real-time auctions — coming soon.</p>
-      </main>
-    </div>
-  )
-}
+import { NamePrompt } from '@/components/NamePrompt'
+import { useIdentity } from '@/hooks/useIdentity'
+import HomePage from '@/pages/HomePage'
+import CreateAuctionPage from '@/pages/CreateAuctionPage'
+import AuctionPage from '@/pages/AuctionPage'
 
 function App() {
+  const { needsName, setUserName } = useIdentity()
+
   return (
     <BrowserRouter>
+      <NamePrompt open={needsName} onSubmit={setUserName} />
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/create" element={<CreateAuctionPage />} />
+        <Route path="/auctions/:id" element={<AuctionPage />} />
       </Routes>
-      <Toaster />
+      <Toaster richColors position="top-right" />
     </BrowserRouter>
   )
 }
