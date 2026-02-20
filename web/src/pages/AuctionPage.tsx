@@ -50,6 +50,31 @@ export default function AuctionPage() {
   const isHighBidder = auction?.current_bidder_id === userId;
   const minBid = auction ? auction.current_price + 0.01 : 0;
 
+  // Client-side auction ending detection (fires confetti/toast when countdown hits 0)
+  const prevRemainingRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!auction || auction.status === "ended") return;
+    const prev = prevRemainingRef.current;
+    prevRemainingRef.current = remaining;
+
+    // Detect transition from >0 to 0
+    if (prev !== null && prev > 0 && remaining <= 0 && !confettiFiredRef.current) {
+      if (isHighBidder) {
+        confettiFiredRef.current = true;
+        confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.6 },
+        });
+        toast.success("🎉 You won the auction!", { duration: 8000 });
+      } else if (auction.current_bidder_name) {
+        toast(`Auction ended — ${auction.current_bidder_name} wins!`, { duration: 5000 });
+      } else {
+        toast("Auction ended with no bids", { duration: 5000 });
+      }
+    }
+  }, [remaining, auction, isHighBidder]);
+
   // React to incoming WS messages for toasts & confetti
   useEffect(() => {
     if (!lastMessage || lastMessage === prevMessageRef.current) return;

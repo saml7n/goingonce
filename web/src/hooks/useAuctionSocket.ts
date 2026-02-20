@@ -66,6 +66,9 @@ export function useAuctionSocket(auctionId: string, userId: string) {
         case "new_bid":
           setState((s) => {
             if (!s.auction) return s;
+            // Deduplicate — the same bid can arrive if WS reconnects or
+            // the bidder already has it from initial state.
+            const exists = s.bids.some((b) => b.id === msg.bid.id);
             return {
               ...s,
               auction: {
@@ -75,7 +78,7 @@ export function useAuctionSocket(auctionId: string, userId: string) {
                 current_bidder_name: msg.auction.current_bidder_name,
                 end_time: msg.auction.end_time,
               },
-              bids: [msg.bid, ...s.bids],
+              bids: exists ? s.bids : [msg.bid, ...s.bids],
               lastMessage: msg,
             };
           });
@@ -136,7 +139,11 @@ export function useAuctionSocket(auctionId: string, userId: string) {
       mountedRef.current = false;
       clearInterval(pingInterval);
       if (timerRef.current) clearTimeout(timerRef.current);
-      wsRef.current?.close();
+      // Only close if connection is open/connecting (avoids React StrictMode double-mount warning)
+      const ws = wsRef.current;
+      if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+        ws.close();
+      }
     };
   }, [connect]);
 

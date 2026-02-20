@@ -26,8 +26,13 @@ function timeLeft(endTime: string): string {
   return `${secs}s`;
 }
 
+function isExpired(endTime: string): boolean {
+  return new Date(endTime).getTime() <= Date.now();
+}
+
 function AuctionCard({ auction }: { auction: Auction }) {
-  const isActive = auction.status === "active";
+  // Client-side: treat as ended if time has expired, even if backend hasn't transitioned yet
+  const isActive = auction.status === "active" && !isExpired(auction.end_time);
   return (
     <Link to={`/auctions/${auction.id}`} className="block">
       <Card className="transition-all hover:shadow-md hover:border-primary/30 cursor-pointer">
@@ -100,8 +105,12 @@ export default function HomePage() {
     };
   }, []);
 
-  const active = auctions.filter((a) => a.status === "active");
-  const ended = auctions.filter((a) => a.status === "ended");
+  const active = auctions.filter(
+    (a) => a.status === "active" && !isExpired(a.end_time)
+  );
+  const ended = auctions.filter(
+    (a) => a.status === "ended" || (a.status === "active" && isExpired(a.end_time))
+  );
 
   return (
     <div className="min-h-screen bg-background">
