@@ -4,11 +4,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
+from app.database import create_db_and_tables
+from app.routes.auctions import router as auctions_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup — DB table creation will be added in Story 2
+    # Startup
+    await create_db_and_tables()
     yield
     # Shutdown
 
@@ -27,6 +30,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(auctions_router)
 
 
 @app.get("/health")

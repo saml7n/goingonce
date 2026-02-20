@@ -33,17 +33,18 @@ As a **developer**, I want **a working project skeleton**, so that **I can start
 As a **user**, I want **to create and view auctions**, so that **I can start a bidding process**.
 
 ### Acceptance criteria
-- [ ] `POST /auctions` creates an auction and returns ID.
-- [ ] `GET /auctions/:id` returns the auction state.
-- [ ] `GET /auctions` lists all auctions.
-- [ ] SQLite database is correctly initialized and persisted.
+- [x] `POST /auctions` creates an auction and returns ID.
+- [x] `GET /auctions/:id` returns the auction state.
+- [x] `GET /auctions` lists all auctions.
+- [x] SQLite database is correctly initialized and persisted.
 
 ### Unit tests
-- Test model validation (prices must be positive).
-- Test database insertion and retrieval.
+- `pytest server/tests/` — 8/8 passed (health + 4 validation + 3 CRUD).
 
 ### QA verification
-- Create an auction via `curl`, then fetch it by id.
+- `POST /auctions` → 201, returns `{"id": "...", "item_name": "Vintage Watch", ...}` ✅
+- `GET /auctions` → 200, returns list with created auction ✅
+- `GET /auctions/:id` → 200, returns auction with empty bids array ✅
 
 ---
 
